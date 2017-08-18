@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Поймай кота!</string>
+    <string name="title_activity_main">Поймай кота!</string>
+    <string name="action_reset">Начать заново</string>
+</resources>
