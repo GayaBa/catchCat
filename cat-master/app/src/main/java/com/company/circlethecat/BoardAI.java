@@ -1,0 +1,316 @@
+package com.company.circlethecat;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.PriorityQueue;
+import java.util.Random;
+
+class BoardAI {
+    private final Boolean[][] mBoard;
+    private final int mXCatPos;
+    private final int mYCatPos;
+
+    BoardAI(Boolean[][] board, int xCatPos, int yCatPos) {
+        mBoard = board;
+        mXCatPos = xCatPos;
+        mYCatPos = yCatPos;
+    }
+
+    // Either a move 0-5 or -1 for Win or -2 for Loss.
+    int nextMove() {
+        if (checkForLoss()) {
+            return -2;
+        }
+
+        int move = -1;
+        int shortestPath = Integer.MAX_VALUE;
+        int probabitlitySelector = 1;
+        Random r = new Random();
+        for (int i = 0; i < Board.mBoardEdgeSize; i++) {
+            int j = 0;
+            ArrayList<Integer> path = aStarPath(i, j);
+            if (path.size() == 0) {
+                continue;
+            }
+            if (path.size() < shortestPath) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector = 1;
+            } else if (path.size() == shortestPath && r.nextInt(100) < 100 / probabitlitySelector) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector += 1;
+            }
+
+            j = Board.mBoardEdgeSize - 1;
+            path = aStarPath(i, j);
+            if (path.size() == 0) {
+                continue;
+            }
+            if (path.size() < shortestPath) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector = 1;
+            } else if (path.size() == shortestPath && r.nextInt(100) < 100 / probabitlitySelector) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector += 1;
+            }
+        }
+        for (int j = 0; j < Board.mBoardEdgeSize; j++) {
+            int i = 0;
+            ArrayList<Integer> path = aStarPath(i, j);
+            if (path.size() == 0) {
+                continue;
+            }
+            if (path.size() < shortestPath) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector = 1;
+            } else if (path.size() == shortestPath && r.nextInt(100) < 100 / probabitlitySelector) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector += 1;
+            }
+
+            i = Board.mBoardEdgeSize - 1;
+            path = aStarPath(i, j);
+            if (path.size() == 0) {
+                continue;
+            }
+            if (path.size() < shortestPath) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector = 1;
+            } else if (path.size() == shortestPath && r.nextInt(100) < 100 / probabitlitySelector) {
+                shortestPath = path.size();
+                move = path.get(path.size() - 1);
+                probabitlitySelector += 1;
+            }
+        }
+        return move;
+    }
+
+     private class NodeComparator implements Comparator<Node> {
+
+        @Override
+        public int compare(Node lhs, Node rhs) {
+            if (lhs.heuristicCost() < rhs.heuristicCost()) {
+                return -1;
+            } else if (lhs.heuristicCost() > rhs.heuristicCost()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    private class Node {
+        private int mX;
+        private int mY;
+        private int realFromSrc;
+        private int estimatedToGoal;
+        private Node mParent;
+
+        Node(int x, int y, int real, int xDest, int yDest, Node parent) {
+            mX = x;
+            mY = y;
+            realFromSrc = real;
+            estimatedToGoal = (int) Math.sqrt(Math.pow(x - xDest, 2) + Math.pow(y - yDest, 2));
+            mParent = parent;
+        }
+
+        int heuristicCost() {
+            return realFromSrc + estimatedToGoal;
+        }
+
+        boolean isDestination(int xDest, int yDest) {
+            return mX == xDest && mY == yDest;
+        }
+
+        private void maybeAdd(int xPos, int yPos, int xDest, int yDest, ArrayList<Node> neighbours) {
+            if (xPos < 0 || xPos >= Board.mBoardEdgeSize) {
+                return;
+            }
+            if (yPos < 0 || yPos >= Board.mBoardEdgeSize) {
+                return;
+            }
+            if (mBoard[xPos][yPos]) {
+                return;
+            }
+            neighbours.add(new Node(xPos, yPos, realFromSrc + 1, xDest, yDest, this));
+        }
+
+        ArrayList<Node> getValidNeighbours(int xDest, int yDest) {
+            ArrayList<Node> neighbours = new ArrayList<>();
+            int xPos, yPos;
+
+            xPos = mX;
+            if (mY % 2 == 0) {
+                xPos -= 1;
+            }
+            yPos = mY + 1;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            xPos = mX - 1;
+            yPos = mY;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            xPos = mX;
+            if (mY % 2 == 0) {
+                xPos -= 1;
+            }
+            yPos = mY - 1;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            xPos = mX;
+            if (mY % 2 == 1) {
+                xPos += 1;
+            }
+            yPos = mY - 1;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            xPos = mX + 1;
+            yPos = mY;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            xPos = mX;
+            if (mY % 2 == 1) {
+                xPos += 1;
+            }
+            yPos = mY + 1;
+            maybeAdd(xPos, yPos, xDest, yDest, neighbours);
+
+            return neighbours;
+        }
+
+        boolean isSameAs(Node n) {
+            return mX == n.mX && mY == n.mY;
+        }
+
+        boolean maybeUpdateNode(Node current) {
+            if (current.realFromSrc + 1 < realFromSrc) {
+                realFromSrc = current.realFromSrc + 1;
+                mParent = current;
+                return true;
+            }
+            return false;
+        }
+
+        void backfillMoves(ArrayList<Integer> moves) {
+            Node current = this;
+            while (current.mParent != null) {
+                Node parent = current.mParent;
+                int direction = -1;
+                if (current.mY == parent.mY) {
+                    if (current.mX == parent.mX + 1) {
+                        direction = 4;
+                    } else if (current.mX == parent.mX - 1) {
+                        direction = 1;
+                    }
+                }
+                if (current.mY == parent.mY + 1) {
+                    if (parent.mY % 2 == 0) {
+                        if (current.mX == parent.mX - 1) {
+                            direction = 0;
+                        } else if (current.mX == parent.mX) {
+                            direction = 5;
+                        }
+                    } else {
+                        if (current.mX == parent.mX) {
+                            direction = 0;
+                        } else if (current.mX == parent.mX + 1) {
+                            direction = 5;
+                        }
+                    }
+                }
+
+                if (current.mY == parent.mY - 1) {
+                    if (parent.mY % 2 == 0) {
+                        if (current.mX == parent.mX - 1) {
+                            direction = 2;
+                        } else if (current.mX == parent.mX) {
+                            direction = 3;
+                        }
+                    } else {
+                        if (current.mX == parent.mX) {
+                            direction = 2;
+                        } else if (current.mX == parent.mX + 1) {
+                            direction = 3;
+                        }
+                    }
+                }
+                if (direction == -1) {
+                    System.out.println("Panic!!!!!!!!" + current.mX + " " + current.mY + " " + parent.mX + " " + parent.mY);
+                }
+                moves.add(direction);
+
+                current = parent;
+            }
+        }
+    }
+
+    private ArrayList<Integer> aStarPath(int xDest, int yDest) {
+        ArrayList<Integer> moves = new ArrayList<>();
+
+        Comparator<Node> comparator = new NodeComparator();
+        PriorityQueue<Node> openPositions = new PriorityQueue<>(100, comparator);
+        openPositions.add(new Node(mXCatPos, mYCatPos, 0, xDest, yDest, null));
+
+        ArrayList<Node> closedPositions = new ArrayList<>();
+
+        while (!openPositions.isEmpty()) {
+            Node current = openPositions.poll();
+            if (current.isDestination(xDest, yDest)) {
+                current.backfillMoves(moves);
+                return moves;
+            }
+            closedPositions.add(current);
+
+            ArrayList<Node> neighbours = current.getValidNeighbours(xDest, yDest);
+            for (int i = 0; i < neighbours.size(); i++) {
+                Node neighbour = neighbours.get(i);
+
+                // Check for closed position.
+                boolean isClosed = false;
+                for (int j = 0; j < closedPositions.size(); j++) {
+                    if (neighbour.isSameAs(closedPositions.get(j))) {
+                        isClosed = true;
+                        break;
+                    }
+                }
+                if (isClosed) {
+                    continue;
+                }
+
+                // Check for open position.
+                boolean isOpen = false;
+                Node updatedNode = null;
+                for (Node next : openPositions) {
+                    if (neighbour.isSameAs(next)) {
+                        isOpen = true;
+                        if (next.maybeUpdateNode(current)) {
+                            updatedNode = next;
+                        }
+                        break;
+                    }
+                }
+                if (updatedNode != null) {
+                    openPositions.remove(updatedNode);
+                    openPositions.add(updatedNode);
+                }
+                if (!isOpen) {
+                    openPositions.add(neighbour);
+                }
+            }
+
+        }
+
+        return moves;
+    }
+
+    private boolean checkForLoss() {
+        return mXCatPos <= 0 || mXCatPos >= Board.mBoardEdgeSize - 1 || mYCatPos <= 0 || mYCatPos >= Board.mBoardEdgeSize - 1;
+    }
+}
